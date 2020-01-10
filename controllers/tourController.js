@@ -25,6 +25,9 @@ exports.uploadTourImages = upload.fields([
   { name: 'images', maxCount: 3 }
 ]);
 
+// upload.single('image') req.file
+// upload.array('images', 5) req.files
+
 exports.resizeTourImages = catchAsync(async (req, res, next) => {
   if (!req.files.imageCover || !req.files.images) return next();
 
@@ -36,6 +39,7 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
     .jpeg({ quality: 90 })
     .toFile(`public/img/tours/${req.body.imageCover}`);
 
+  // 2) Images
   req.body.images = [];
 
   await Promise.all(
@@ -55,7 +59,7 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
   next();
 });
 
-exports.aliasTopTours = async (req, res, next) => {
+exports.aliasTopTours = (req, res, next) => {
   req.query.limit = '5';
   req.query.sort = '-ratingsAverage,price';
   req.query.fields = 'name,price,ratingsAverage,summary,difficulty';
@@ -87,7 +91,11 @@ exports.getTourStats = catchAsync(async (req, res, next) => {
     {
       $sort: { avgPrice: 1 }
     }
+    // {
+    //   $match: { _id: { $ne: 'EASY' } }
+    // }
   ]);
+
   res.status(200).json({
     status: 'success',
     data: {
@@ -122,7 +130,9 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
       $addFields: { month: '$_id' }
     },
     {
-      $project: { _id: 0 }
+      $project: {
+        _id: 0
+      }
     },
     {
       $sort: { numTourStarts: -1 }
@@ -141,6 +151,7 @@ exports.getMonthlyPlan = catchAsync(async (req, res, next) => {
 });
 
 // /tours-within/:distance/center/:latlng/unit/:unit
+// /tours-within/233/center/34.111745,-118.113491/unit/mi
 exports.getToursWithin = catchAsync(async (req, res, next) => {
   const { distance, latlng, unit } = req.params;
   const [lat, lng] = latlng.split(',');
@@ -150,16 +161,14 @@ exports.getToursWithin = catchAsync(async (req, res, next) => {
   if (!lat || !lng) {
     next(
       new AppError(
-        'Please provide latitude and longtitude in the format lat, lng',
+        'Please provide latitutr and longitude in the format lat,lng.',
         400
       )
     );
   }
 
   const tours = await Tour.find({
-    startLocation: {
-      $geoWithin: { $centerSphere: [[lng, lat], radius] }
-    }
+    startLocation: { $geoWithin: { $centerSphere: [[lng, lat], radius] } }
   });
 
   res.status(200).json({
@@ -180,7 +189,7 @@ exports.getDistances = catchAsync(async (req, res, next) => {
   if (!lat || !lng) {
     next(
       new AppError(
-        'Please provide latitude and longtitude in the format lat, lng',
+        'Please provide latitutr and longitude in the format lat,lng.',
         400
       )
     );
@@ -189,7 +198,10 @@ exports.getDistances = catchAsync(async (req, res, next) => {
   const distances = await Tour.aggregate([
     {
       $geoNear: {
-        near: { type: 'Point', coordinates: [lng * 1, lat * 1] },
+        near: {
+          type: 'Point',
+          coordinates: [lng * 1, lat * 1]
+        },
         distanceField: 'distance',
         distanceMultiplier: multiplier
       }
@@ -201,6 +213,7 @@ exports.getDistances = catchAsync(async (req, res, next) => {
       }
     }
   ]);
+
   res.status(200).json({
     status: 'success',
     data: {

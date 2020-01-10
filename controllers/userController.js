@@ -63,14 +63,14 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
-        'This route is not for password updates. Please use /updateMyPassword',
+        'This route is not for password updates. Please use /updateMyPassword.',
         400
       )
     );
   }
+
   // 2) Filtered out unwanted fields names that are not allowed to be updated
   const filteredBody = filterObj(req.body, 'name', 'email');
-
   if (req.file) filteredBody.photo = req.file.filename;
 
   // 3) Update user document
@@ -99,13 +99,13 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
 exports.createUser = (req, res) => {
   res.status(500).json({
     status: 'error',
-    message: 'This route is not yet defined! Please use /signup instead'
+    message: 'This route is not defined! Please use /signup instead'
   });
 };
 
-exports.getAllUsers = factory.getAll(User);
 exports.getUser = factory.getOne(User);
+exports.getAllUsers = factory.getAll(User);
 
-// Do NOT update password with this
+// Do NOT update passwords with this!
 exports.updateUser = factory.updateOne(User);
 exports.deleteUser = factory.deleteOne(User);
